@@ -1,30 +1,65 @@
 import os
+import time
+import json
+
 import asyncmongo
 import tornado.ioloop
 import tornado.web
 
-class MainHandler(tornado.web.RequestHandler):
-    @property
-    def db(self):
-        if not hasattr(self, '_db'):
-            self._db = asyncmongo.Client(pool_id='mydb', host='localhost', port=27017, dbname='metrics', dbuser='metrics', dbpass='password')
-        return self._db
+API_SECRET = 'shhh'
 
+db = asyncmongo.Client(
+    pool_id='mydb',
+    host='localhost',
+    port=27017,
+    dbname='metrics',
+    dbuser='metrics',
+    dbpass='password'
+)
+
+# class MainHandler(tornado.web.RequestHandler):
+#     @tornado.web.asynchronous
+#     def get(self):
+#         db.events.find({'user_id': 9357}, limit=1, callback=self._on_response)
+#         # or
+#         # conn = db.connection(collectionname="...", dbname="...")
+#         # conn.find(..., callback=self._on_response)
+
+#     def _on_response(self, response, error):
+#         if error:
+#             raise tornado.web.HTTPError(500)
+#         self.write(response[0]['session_id'])
+#         self.finish()
+
+class StoreEventHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
-    def get(self):
-        self.db.events.find({'user_id': 9357}, limit=1, callback=self._on_response)
-        # or
-        # conn = self.db.connection(collectionname="...", dbname="...")
-        # conn.find(..., callback=self._on_response)
+    def post(self):
+        data = json.loads(self.request.body)
+
+        if data['api_secret'] != API_SECRET:
+            self.write(json.dumps({'status': 'failure'}))
+            self.finish()
+            return
+
+        event = {
+            "timestamp": time.time(),
+            "session_id": data['session_id'],
+            "url": data['url']
+        }
+        if 'user_id' in data:
+            event["user_id"] = data['user_id']
+
+        db.events.insert(event, limit=1, callback=self._on_response)
 
     def _on_response(self, response, error):
         if error:
             raise tornado.web.HTTPError(500)
-        self.write(response[0]['session_id'])
+        self.write(json.dumps({'status': 'success'}))
         self.finish()
 
 application = tornado.web.Application([
-    (r"/", MainHandler),
+    # (r"/", MainHandler),
+    (r"/store_event", StoreEventHandler),
 ])
 
 if __name__ == "__main__":
