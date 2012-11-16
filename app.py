@@ -2,10 +2,12 @@ import os
 import time
 import json
 import base64
+import urllib2
 
 import asyncmongo
 import tornado.ioloop
 import tornado.web
+import tornado.httpclient
 
 API_SECRET = 'shhh'
 
@@ -62,12 +64,23 @@ class StoreEventHandler(tornado.web.RequestHandler):
 class MixpanelTrackHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     def get(self):
-        data = json.loads(base64.b64decode(self.get_argument('data')))
-        db.mixpanel.insert(data, callback=self._on_response)
-    def _on_response(self, response, error):
+        self.data_str = self.get_argument('data')
+        data = json.loads(base64.b64decode(self.data_str))
+        db.mixpanel.insert(data, callback=self._on_db_response)
+    def _on_db_response(self, response, error):
         if error:
-            raise tornado.web.HTTPError(500)
-        self.write(json.dumps({'status': 'success'}))
+            self.write('0')
+            self.finish()
+            return
+        http_client = tornado.httpclient.AsyncHTTPClient()
+        http_client.fetch("http://api.mixpanel.com/track/?data=" + self.data_str, self._on_mp_response)
+    def _on_mp_response(self, response):
+        if response.error:
+            self.write('0')
+            self.finish()
+            return
+
+        self.write('1')
         self.finish()
 
 
