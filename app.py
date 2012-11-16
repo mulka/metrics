@@ -1,6 +1,7 @@
 import os
 import time
 import json
+import base64
 
 import asyncmongo
 import tornado.ioloop
@@ -57,9 +58,23 @@ class StoreEventHandler(tornado.web.RequestHandler):
         self.write(json.dumps({'status': 'success'}))
         self.finish()
 
+
+class MixpanelTrackHandler(tornado.web.RequestHandler):
+    @tornado.web.asynchronous
+    def get(self):
+        data = json.loads(base64.b64decode(self.get_argument('data')))
+        db.mixpanel.insert(data, callback=self._on_response)
+    def _on_response(self, response, error):
+        if error:
+            raise tornado.web.HTTPError(500)
+        self.write(json.dumps({'status': 'success'}))
+        self.finish()
+
+
 application = tornado.web.Application([
     # (r"/", MainHandler),
     (r"/store_event", StoreEventHandler),
+    (r"/track/", MixpanelTrackHandler),
 ])
 
 if __name__ == "__main__":
