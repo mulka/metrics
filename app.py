@@ -22,6 +22,18 @@ db = asyncmongo.Client(
     dbpass='password'
 )
 
+funnels = [
+    {
+        "name": "homepage->done",
+        "steps": ["/", "/done"]
+    },
+    {
+        "name": "main workflow",
+        "steps": ["/", "/authenticate", "/settings", "/done"]
+    }
+]
+
+
 session_ids = set()
 
 class MainHandler(tornado.web.RequestHandler):
@@ -47,8 +59,15 @@ class APIFunnelDataHandler(tornado.web.RequestHandler):
             self.finish()
             return
 
+        steps = set()
+        for funnel in funnels:
+            for step in funnel["steps"]:
+                steps.add(step)
+
+        or_clause = [{"url": step} for step in steps]
+
         funnel_data = db.events.find(
-            {"$or":[{"url": "/"},{"url": "/done"}]},
+            {"$or":or_clause},
             sort=[("session_id", 1), ("timestamp", 1)],
             callback=self._on_response
         )
@@ -62,24 +81,29 @@ class APIFunnelDataHandler(tornado.web.RequestHandler):
         for item in response:
             sessions[item["session_id"]].append(item["url"])
 
-        data = {"homepage": 0, "done": 0}
-        for session_id, urls in sessions.iteritems():
-            item_data = {"homepage": False, "done": False}
-            for url in urls:
-                if url == "/":
-                    item_data["homepage"] = True
-                elif item_data["homepage"] and url == "/done":
-                    item_data["done"] = True
+        funnels_data = []
+        for funnel in funnels:
+            step_counts = defaultdict(int)
+            for session_id, urls in sessions.iteritems():
+                item_data = defaultdict(bool)
+                for url in urls:
+                    for i, step in enumerate(funnel["steps"]):
+                        if (i == 0 or item_data[funnel["steps"][i-1]]) and url == step:
+                            item_data[step] = True
 
-            if item_data["homepage"]:
-                data["homepage"] += 1
-            if item_data["done"]:
-                data["done"] += 1
+                for step in funnel["steps"]:
+                    if item_data[step]:
+                        step_counts[step] += 1
+            funnels_data.append(step_counts)
 
-        self.write(json.dumps({'status': 'success', 'data': [
-            {"name": "homepage", "value": data["homepage"]},
-            {"name": "done", "value": data["done"]}
-        ]}))
+        data = []
+        for i, funnel in enumerate(funnels):
+            funnel_data = []
+            for step in funnel["steps"]:
+                funnel_data.append({"name": step, "value": funnels_data[i][step]})
+            data.append({"name": funnel["name"], "steps": funnel_data})
+
+        self.write(json.dumps({'status': 'success', 'data': data}))
         self.finish()
 
 # class MainHandler(tornado.web.RequestHandler):

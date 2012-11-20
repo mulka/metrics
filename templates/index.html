@@ -28,10 +28,19 @@
             $.postJSON('/api/funnel_data', {"session_id": session_id}, function(response){
                 var output = '';
                 for(i in response.data){
-                    step = response.data[i];
-                    output += step.name + ':' + step.value + ' '; 
+                    output += "Funnel Name: " + response.data[i].name + "<br>";
+                    steps = response.data[i].steps
+                    for(j in steps){
+                        step = steps[j];
+                        if(j != 0){
+                            prev_step = steps[j-1];
+                            output += ((step.value / prev_step.value) * 100).toFixed(2) + '&#37; ';;
+                        }
+                        output += step.name + ':' + step.value + ' ';
+                    }
+                    output += "<br><br>";
                 }
-                $("#data").text(output);
+                $("#data").html(output);
             });
         }
 
