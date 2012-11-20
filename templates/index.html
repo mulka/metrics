@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+</head>
+<body>
+    <form id="login_form">
+        Password: <input id="password" type="password"><input type="submit">
+    </form>
+    <div id="data" style="display: none;">
+        loading...
+    </div>
+
+    <script>
+        var session_id = null;
+
+        $.postJSON = function(url, data, callback) {
+            $.ajax({
+                type: 'POST',
+                url: url,
+                data: JSON.stringify(data),
+                success: callback,
+                dataType: "json"
+            });
+        };
+
+        function getData(){
+            $.postJSON('/api/funnel_data', {"session_id": session_id}, function(response){
+                var output = '';
+                for(i in response.data){
+                    step = response.data[i];
+                    output += step.name + ':' + step.value + ' '; 
+                }
+                $("#data").text(output);
+            });
+        }
+
+        $('#login_form').submit(function(e){
+            $.postJSON('/api/login', {"password": $("#password").val()}, function(response){
+                if(response.status == 'success'){
+                    session_id = response.data.session_id;
+                    $("#login_form").hide();
+                    $("#data").show();
+                    $("#refresh").show();
+                    getData();
+                }
+            });
+            e.preventDefault(); 
+            return false;
+        });
+    </script>
+</body>
