@@ -38,7 +38,9 @@ session_ids = set()
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render('index.html')
+        f = open('index.html')
+        self.write(f.read())
+        f.close()
 
 class APILoginHandler(tornado.web.RequestHandler):
     def post(self):
@@ -176,8 +178,7 @@ application = tornado.web.Application([
     (r"/api/funnel_data", APIFunnelDataHandler),
     (r"/store_event", StoreEventHandler),
     (r"/track/", MixpanelTrackHandler),
-],
-template_path='templates')
+])
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 8888))
