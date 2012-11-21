@@ -33,7 +33,6 @@ funnels = [
     }
 ]
 
-
 session_ids = set()
 
 class MainHandler(tornado.web.RequestHandler):
@@ -178,7 +177,9 @@ application = tornado.web.Application([
     (r"/api/funnel_data", APIFunnelDataHandler),
     (r"/store_event", StoreEventHandler),
     (r"/track/", MixpanelTrackHandler),
-])
+],
+static_path='static',
+gzip=True)
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 8888))
