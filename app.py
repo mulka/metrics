@@ -11,27 +11,18 @@ import tornado.ioloop
 import tornado.web
 import tornado.httpclient
 
+from config import funnels, db as db_config
+
 API_SECRET = 'shhh'
 
 db = asyncmongo.Client(
     pool_id='mydb',
-    host='localhost',
-    port=27017,
-    dbname='metrics',
-    dbuser='metrics',
-    dbpass='password'
+    host=db_config["host"],
+    port=db_config["port"],
+    dbname=db_config["name"],
+    dbuser=db_config["username"],
+    dbpass=db_config["password"]
 )
-
-funnels = [
-    {
-        "name": "homepage->done",
-        "steps": ["/", "/done"]
-    },
-    {
-        "name": "main workflow",
-        "steps": ["/", "/authenticate", "/settings", "/done"]
-    }
-]
 
 session_ids = set()
 
@@ -60,48 +51,23 @@ class APIFunnelDataHandler(tornado.web.RequestHandler):
             self.finish()
             return
 
-        steps = set()
-        for funnel in funnels:
-            for step in funnel["steps"]:
-                steps.add(step)
+        db.funnel_data.find(callback=self._on_response)
 
-        or_clause = [{"url": step} for step in steps]
-
-        funnel_data = db.events.find(
-            {"$or":or_clause},
-            sort=[("session_id", 1), ("timestamp", 1)],
-            callback=self._on_response
-        )
     def _on_response(self, response, error):
         if error:
             self.write(json.dumps({'status': 'failure'}))
             self.finish()
             return
 
-        sessions = defaultdict(list)
-        for item in response:
-            sessions[item["session_id"]].append(item["url"])
-
-        funnels_data = []
-        for funnel in funnels:
-            step_counts = defaultdict(int)
-            for session_id, urls in sessions.iteritems():
-                item_data = defaultdict(bool)
-                for url in urls:
-                    for i, step in enumerate(funnel["steps"]):
-                        if (i == 0 or item_data[funnel["steps"][i-1]]) and url == step:
-                            item_data[step] = True
-
-                for step in funnel["steps"]:
-                    if item_data[step]:
-                        step_counts[step] += 1
-            funnels_data.append(step_counts)
+        funnels_data = {}
+        for funnel in response:
+            funnels_data[funnel["_id"]] = funnel["value"]
 
         data = []
         for i, funnel in enumerate(funnels):
             funnel_data = []
             for step in funnel["steps"]:
-                funnel_data.append({"name": step, "value": funnels_data[i][step]})
+                funnel_data.append({"name": step, "value": funnels_data[funnel["name"]][step]})
             data.append({"name": funnel["name"], "steps": funnel_data})
 
         self.write(json.dumps({'status': 'success', 'data': data}))
