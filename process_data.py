@@ -1,8 +1,5 @@
 import json
 
-import asyncmongo
-import tornado.ioloop
-
 from pymongo import Connection
 from bson import Code
 
