@@ -144,6 +144,7 @@ application = tornado.web.Application([
     (r"/", MainHandler),
     (r"/api/login", APILoginHandler),
     (r"/api/funnel_data", APIFunnelDataHandler),
+    (r"/api/store_event", StoreEventHandler),
     (r"/store_event", StoreEventHandler),
     (r"/track/", MixpanelTrackHandler),
 ],
