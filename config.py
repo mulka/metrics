@@ -1,12 +1,16 @@
-db = {
-	"host": "localhost",
-	"port": 27017,
-	"name": "metrics",
-	"username": "metrics",
-	"password": "password"
+API_SECRET = 'shhh'
+
+PASSWORD = 'password'
+
+DB = {
+    "host": "localhost",
+    "port": 27017,
+    "name": "metrics",
+    "username": "metrics",
+    "password": "password"
 }
 
-funnels = [
+FUNNELS = [
     {
         "name": "homepage->done",
         "steps": ["/", "/done"]

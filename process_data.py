@@ -3,14 +3,14 @@ import json
 from pymongo import Connection
 from bson import Code
 
-from config import funnels, db as db_config
+from config import DB, FUNNELS
 
 db = Connection(
-    "mongodb://" + db_config["username"] + ":" + db_config["password"]
-    + "@" + db_config["host"] + ":" + str(db_config["port"]) + "/" + db_config["name"]
-)[db_config["name"]]
+    "mongodb://" + DB["username"] + ":" + DB["password"]
+    + "@" + DB["host"] + ":" + str(DB["port"]) + "/" + DB["name"]
+)[DB["name"]]
 
-funnels_code = "var funnels = " + json.dumps(funnels) + ";";
+funnels_code = "var funnels = " + json.dumps(FUNNELS) + ";";
 
 def map_code(code):
     return "function () {" + funnels_code + code + "}"

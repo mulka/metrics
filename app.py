@@ -11,17 +11,15 @@ import tornado.ioloop
 import tornado.web
 import tornado.httpclient
 
-from config import funnels, db as db_config
-
-API_SECRET = 'shhh'
+from config import API_SECRET, PASSWORD, DB, FUNNELS
 
 db = asyncmongo.Client(
     pool_id='mydb',
-    host=db_config["host"],
-    port=db_config["port"],
-    dbname=db_config["name"],
-    dbuser=db_config["username"],
-    dbpass=db_config["password"]
+    host=DB["host"],
+    port=DB["port"],
+    dbname=DB["name"],
+    dbuser=DB["username"],
+    dbpass=DB["password"]
 )
 
 session_ids = set()
@@ -35,7 +33,7 @@ class MainHandler(tornado.web.RequestHandler):
 class APILoginHandler(tornado.web.RequestHandler):
     def post(self):
         data = json.loads(self.request.body)
-        if data['password'] == 'password':
+        if data['password'] == PASSWORD:
             session_id = str(uuid.uuid4())
             session_ids.add(session_id)
             self.write(json.dumps({'status': 'success', 'data': {'session_id': session_id}}))
@@ -64,7 +62,7 @@ class APIFunnelDataHandler(tornado.web.RequestHandler):
             funnels_data[funnel["_id"]] = funnel["value"]
 
         data = []
-        for i, funnel in enumerate(funnels):
+        for i, funnel in enumerate(FUNNELS):
             funnel_data = []
             for step in funnel["steps"]:
                 funnel_data.append({"name": step, "value": funnels_data[funnel["name"]][step]})
