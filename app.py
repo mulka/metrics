@@ -65,7 +65,12 @@ class APIFunnelDataHandler(tornado.web.RequestHandler):
         for i, funnel in enumerate(FUNNELS):
             funnel_data = []
             for step in funnel["steps"]:
-                funnel_data.append({"name": step, "value": funnels_data[funnel["name"]][step]})
+                if funnel["name"] in funnels_data:
+                    value = funnels_data[funnel["name"]][step]
+                else:
+                    value = 0
+
+                funnel_data.append({"name": step, "value": value})
             data.append({"name": funnel["name"], "steps": funnel_data})
 
         self.write(json.dumps({'status': 'success', 'data': data}))
