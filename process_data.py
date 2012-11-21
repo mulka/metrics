@@ -107,6 +107,10 @@ reduce2 = reduce_code("""
     return result;
 """)
 
+if "events" not in db.collection_names():
+    print "no data yet"
+    exit()
+
 db.events.map_reduce(map1, reduce1, "events_by_session")
 result = db.events_by_session.map_reduce(map2, reduce2, "funnel_data")
 for doc in result.find():
