@@ -8,13 +8,11 @@
             {{name}}<br>
             <table border="1">
             <tr>
-            <td></td>
             {{#steps}}
                 <td>{{name}}</td>
             {{/steps}}
             </tr>
             <tr>
-            <td>Overall</td>
             {{#steps}}
                 <td>{{value}}{{#if conversion_rate}} ({{percent conversion_rate}}){{/if}}</td>
             {{/steps}}
