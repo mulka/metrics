@@ -2,6 +2,7 @@ import os
 import time
 import json
 import uuid
+import random
 import base64
 import urllib2
 from collections import defaultdict
@@ -11,7 +12,7 @@ import tornado.ioloop
 import tornado.web
 import tornado.httpclient
 
-from config import API_SECRET, PASSWORD, DB, FUNNELS
+from config import API_SECRET, PASSWORD, DB, FUNNELS, TESTS
 
 db = asyncmongo.Client(
     pool_id='mydb',
@@ -90,6 +91,42 @@ class APIFunnelDataHandler(tornado.web.RequestHandler):
 #         self.write(response[0]['session_id'])
 #         self.finish()
 
+class GetTestsHandler(tornado.web.RequestHandler):
+    @tornado.web.asynchronous
+    def post(self):
+        data = json.loads(self.request.body)
+
+        if data['api_secret'] != API_SECRET:
+            self.write(json.dumps({'status': 'failure'}))
+            self.finish()
+            return
+
+        session_id = data['session_id']
+
+        self.tests = {}
+        for test in TESTS:
+            ids = []
+            if 'variations' not in test:
+                test['variations'] = [{"id": True}, {"id": False}]
+
+            for v in test['variations']:
+                if 'weight' in v:
+                    weight = v['weight']
+                else:
+                    weight = 1
+
+                for i in xrange(weight):
+                    ids.append(v['id'])
+            self.tests[test['id']] = random.choice(ids)
+
+        db.sessions.insert({'_id': session_id, 'tests': self.tests}, safe=True, callback=self._on_response)
+
+    def _on_response(self, response, error):
+        if error:
+            raise tornado.web.HTTPError(500)
+        self.write(json.dumps({'status': 'success', 'data': self.tests}))
+        self.finish()
+
 class StoreEventHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     def post(self):
@@ -108,7 +145,7 @@ class StoreEventHandler(tornado.web.RequestHandler):
         if 'user_id' in data:
             event["user_id"] = data['user_id']
 
-        db.events.insert(event, limit=1, callback=self._on_response)
+        db.events.insert(event, callback=self._on_response)
 
     def _on_response(self, response, error):
         if error:
@@ -144,6 +181,7 @@ application = tornado.web.Application([
     (r"/", MainHandler),
     (r"/api/login", APILoginHandler),
     (r"/api/funnel_data", APIFunnelDataHandler),
+    (r"/api/tests", GetTestsHandler),
     (r"/api/store_event", StoreEventHandler),
     (r"/track/", MixpanelTrackHandler),
 ],
