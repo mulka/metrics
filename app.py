@@ -101,7 +101,7 @@ class GetTestsHandler(tornado.web.RequestHandler):
             self.finish()
             return
 
-        session_id = data['session_id']
+        self.session_id = data['session_id']
 
         self.tests = {}
         for test in TESTS:
@@ -119,12 +119,20 @@ class GetTestsHandler(tornado.web.RequestHandler):
                     ids.append(v['id'])
             self.tests[test['id']] = random.choice(ids)
 
-        db.sessions.insert({'_id': session_id, 'tests': self.tests}, safe=True, callback=self._on_response)
+        db.sessions.insert({'_id': self.session_id, 'tests': self.tests}, safe=True, callback=self._on_insert_response)
 
-    def _on_response(self, response, error):
+    def _on_insert_response(self, response, error):
+        if error:
+            db.sessions.find({'_id': self.session_id}, limit=1, callback=self._on_find_response)
+        else:
+            self.write(json.dumps({'status': 'success', 'data': self.tests}))
+            self.finish()
+
+    def _on_find_response(self, response, error):
         if error:
             raise tornado.web.HTTPError(500)
-        self.write(json.dumps({'status': 'success', 'data': self.tests}))
+
+        self.write(json.dumps({'status': 'success', 'data': response[0]['tests']}))
         self.finish()
 
 class StoreEventHandler(tornado.web.RequestHandler):
