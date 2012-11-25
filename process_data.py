@@ -37,12 +37,11 @@ map1 = map_code("""
 
 reduce1 = reduce_code("""
     var output = new Array();
-    for (i in values){
-        var value = values[i].events;
-        for (j in value){
-            output.push(value[j])
-        }
-    }
+    values.forEach(function (value){
+        value.events.forEach(function (event){
+            output.push(event);
+        });
+    });
     return {"events": output};
 """)
 
