@@ -8,15 +8,19 @@
             {{name}}<br>
             <table border="1">
             <tr>
-            {{#steps}}
+            <td></td>
+            {{#step_names}}
+                <td>{{this}}</td>
+            {{/step_names}}
+            </tr>
+            {{#data}}
+                <tr>
                 <td>{{name}}</td>
-            {{/steps}}
-            </tr>
-            <tr>
-            {{#steps}}
-                <td>{{value}}{{#if conversion_rate}} ({{percent conversion_rate}}){{/if}}</td>
-            {{/steps}}
-            </tr>
+                {{#step_data}}
+                    <td>{{count}}{{#if conversion_rate}} ({{percent conversion_rate}}){{/if}}</td>
+                {{/step_data}}
+                </tr>
+            {{/data}}
             </table>
             <br><br>
         {{/funnels}}
@@ -53,16 +57,19 @@
             $.postJSON('/api/funnel_data', {"session_id": session_id}, function(response){
                 var funnels = response.data;
                 for(i in funnels){
-                    steps = funnels[i].steps
-                    for(j in steps){
-                        step = steps[j]
-                        if(j != 0){
-                            prev_step = steps[j-1];
-                            step.conversion_rate = step.value / prev_step.value
+                    data = funnels[i].data;
+                    for(j in data){
+                        row = data[j].step_data;
+                        for(k in row){
+                            step = row[k] = {"count": row[k]};
+                            if(k != 0){
+                                prev_step = row[k-1];
+                                step.conversion_rate = step.count / prev_step.count
+                            }
                         }
                     }
                 }
-
+                console.log(funnels);
                 $("#data").html(data_template({"funnels": funnels}));
             });
         }
