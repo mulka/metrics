@@ -122,9 +122,6 @@ class GetTestsHandler(tornado.web.RequestHandler):
         self.tests = {}
         for test in TESTS:
             ids = []
-            if 'variations' not in test:
-                test['variations'] = [{"id": True}, {"id": False}]
-
             for v in test['variations']:
                 if 'weight' in v:
                     weight = v['weight']
