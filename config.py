@@ -35,5 +35,12 @@ TESTS = [
             {"id":"go"},
             {"id":"start"}
         ]
+    },
+    {
+        "id": "collectEmail",
+        "variations":[
+            {"id": "true"},
+            {"id": "false"}
+        ]
     }
 ]
