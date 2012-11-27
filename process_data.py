@@ -3,7 +3,6 @@ import json
 
 from pymongo import Connection
 from pymongo.uri_parser import parse_uri
-from bson import Code
 
 from config import FUNNELS, TESTS
 
