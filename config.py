@@ -1,7 +1,3 @@
-API_SECRET = 'shhh'
-
-PASSWORD = 'password'
-
 FUNNELS = [
     {
         "name": "homepage->done",

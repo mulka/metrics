@@ -13,7 +13,10 @@ import tornado.web
 import tornado.httpclient
 from pymongo.uri_parser import parse_uri
 
-from config import API_SECRET, PASSWORD, FUNNELS, TESTS
+from config import FUNNELS, TESTS
+
+API_SECRET = os.environ['API_SECRET']
+PASSWORD = os.environ['PASSWORD']
 
 db_info = parse_uri(os.environ['MONGOLAB_URI'])
 
