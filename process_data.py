@@ -1,14 +1,15 @@
+import os
 import json
 
 from pymongo import Connection
+from pymongo.uri_parser import parse_uri
 from bson import Code
 
-from config import DB, FUNNELS, TESTS
+from config import FUNNELS, TESTS
 
-db = Connection(
-    "mongodb://" + DB["username"] + ":" + DB["password"]
-    + "@" + DB["host"] + ":" + str(DB["port"]) + "/" + DB["name"]
-)[DB["name"]]
+db_uri = os.environ['MONGOLAB_URI']
+db_name = parse_uri(db_uri)['database']
+db = Connection(db_uri)[db_name]
 
 funnels_code = "var funnels = " + json.dumps(FUNNELS) + ";";
 tests_code = "var tests = " + json.dumps(TESTS) + ";";

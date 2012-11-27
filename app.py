@@ -11,16 +11,19 @@ import asyncmongo
 import tornado.ioloop
 import tornado.web
 import tornado.httpclient
+from pymongo.uri_parser import parse_uri
 
-from config import API_SECRET, PASSWORD, DB, FUNNELS, TESTS
+from config import API_SECRET, PASSWORD, FUNNELS, TESTS
+
+db_info = parse_uri(os.environ['MONGOLAB_URI'])
 
 db = asyncmongo.Client(
     pool_id='mydb',
-    host=DB["host"],
-    port=DB["port"],
-    dbname=DB["name"],
-    dbuser=DB["username"],
-    dbpass=DB["password"]
+    host=db_info['nodelist'][0][0],
+    port=db_info['nodelist'][0][1],
+    dbname=db_info['database'],
+    dbuser=db_info['username'],
+    dbpass=db_info['password']
 )
 
 session_ids = set()
