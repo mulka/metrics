@@ -13,8 +13,6 @@ import tornado.web
 import tornado.httpclient
 from pymongo.uri_parser import parse_uri
 
-from config import FUNNELS, TESTS
-
 API_SECRET = os.environ['API_SECRET']
 PASSWORD = os.environ['PASSWORD']
 
@@ -56,9 +54,26 @@ class APIFunnelDataHandler(tornado.web.RequestHandler):
             self.finish()
             return
 
-        db.funnel_data.find(callback=self._on_response)
+        db.config.find(callback=self._on_config_response)
 
-    def _on_response(self, response, error):
+    def _on_config_response(self, response, error):
+        if error:
+            self.write(json.dumps({'status': 'failure'}))
+            self.finish()
+            return
+
+        self.funnels = []
+        self.tests = []
+
+        for entry in response:
+            if entry['_id'] == 'funnels':
+                self.funnels = entry['funnels']
+            elif entry['_id'] == 'tests':
+                self.tests = entry['tests']
+
+        db.funnel_data.find(callback=self._on_funnel_data_response)
+
+    def _on_funnel_data_response(self, response, error):
         if error:
             self.write(json.dumps({'status': 'failure'}))
             self.finish()
@@ -69,7 +84,7 @@ class APIFunnelDataHandler(tornado.web.RequestHandler):
             funnels_data[funnel["_id"]] = funnel["value"]["step_counts"]
 
         data = []
-        for i, funnel in enumerate(FUNNELS):
+        for i, funnel in enumerate(self.funnels):
             overall_data = []
             for step in funnel["steps"]:
                 if funnel["name"] in funnels_data:
@@ -81,7 +96,7 @@ class APIFunnelDataHandler(tornado.web.RequestHandler):
 
             rows = [{"name": "Overall", "step_data": overall_data}]
 
-            for test in TESTS:
+            for test in self.tests:
                 for v in test["variations"]:
                     step_data = []
                     for step in funnel["steps"]:
@@ -116,6 +131,19 @@ class APIFunnelDataHandler(tornado.web.RequestHandler):
 class GetTestsHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     def post(self):
+        db.config.find_one('tests', callback=self._on_config_response)
+
+    def _on_config_response(self, response, error):
+        if error:
+            self.write(json.dumps({'status': 'failure'}))
+            self.finish()
+            return
+
+        tests = []
+
+        if response is not None:
+            tests = response['tests']
+
         data = json.loads(self.request.body)
 
         if data['api_secret'] != API_SECRET:
@@ -125,8 +153,8 @@ class GetTestsHandler(tornado.web.RequestHandler):
 
         self.session_id = data['session_id']
 
-        self.tests = {}
-        for test in TESTS:
+        self.session_tests = {}
+        for test in tests:
             ids = []
             for v in test['variations']:
                 if 'weight' in v:
@@ -136,15 +164,15 @@ class GetTestsHandler(tornado.web.RequestHandler):
 
                 for i in xrange(weight):
                     ids.append(v['id'])
-            self.tests[test['id']] = random.choice(ids)
+            self.session_tests[test['id']] = random.choice(ids)
 
-        db.sessions.insert({'_id': self.session_id, 'tests': self.tests}, safe=True, callback=self._on_insert_response)
+        db.sessions.insert({'_id': self.session_id, 'tests': self.session_tests}, safe=True, callback=self._on_insert_response)
 
     def _on_insert_response(self, response, error):
         if error:
             db.sessions.find({'_id': self.session_id}, limit=1, callback=self._on_find_response)
         else:
-            self.write(json.dumps({'status': 'success', 'data': self.tests}))
+            self.write(json.dumps({'status': 'success', 'data': self.session_tests}))
             self.finish()
 
     def _on_find_response(self, response, error):

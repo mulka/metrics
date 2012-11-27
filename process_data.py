@@ -4,11 +4,25 @@ import json
 from pymongo import Connection
 from pymongo.uri_parser import parse_uri
 
-from config import FUNNELS, TESTS
-
 db_uri = os.environ['MONGOLAB_URI']
-db_name = parse_uri(db_uri)['database']
-db = Connection(db_uri)[db_name]
+db_info = parse_uri(db_uri)
+
+# voodoo magic to get rid of a silly pymongo warning when not using authentication
+if db_info['username'] is None:
+    db_uri = '/'.join(db_uri.split('/')[0:-1])
+
+db = Connection(db_uri)[db_info['database']]
+
+if "config" not in db.collection_names():
+    print 'Error: config database collection could not be found'
+    exit()
+
+FUNNELS = db.config.find_one('funnels')['funnels']
+TESTS = db.config.find_one('tests')['tests']
+
+if FUNNELS is None or TESTS is None:
+    print 'Error: Could not find funnels and/or tests in the config database collection'
+    exit()
 
 funnels_code = "var funnels = " + json.dumps(FUNNELS) + ";";
 tests_code = "var tests = " + json.dumps(TESTS) + ";";
