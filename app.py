@@ -241,7 +241,8 @@ application = tornado.web.Application([
     (r"/track/", MixpanelTrackHandler),
 ],
 static_path='static',
-gzip=True)
+gzip=True,
+debug=os.environ.get('DEBUG', False))
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 8888))
