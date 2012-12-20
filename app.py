@@ -13,7 +13,8 @@ import tornado.web
 import tornado.httpclient
 from pymongo.uri_parser import parse_uri
 
-API_SECRET = os.environ['API_SECRET']
+TRACK_API_KEY = os.environ['TRACK_API_KEY']
+TEST_API_SECRET = os.environ['TEST_API_SECRET']
 PASSWORD = os.environ['PASSWORD']
 
 db_info = parse_uri(os.environ['MONGOLAB_URI'])
@@ -146,7 +147,7 @@ class GetTestsHandler(tornado.web.RequestHandler):
 
         data = json.loads(self.request.body)
 
-        if data['api_secret'] != API_SECRET:
+        if data['api_secret'] != TEST_API_SECRET:
             self.write(json.dumps({'status': 'failure'}))
             self.finish()
             return
@@ -194,7 +195,7 @@ class StoreEventHandler(tornado.web.RequestHandler):
     def post(self):
         data = json.loads(self.request.body)
 
-        if data['api_key'] != API_SECRET:
+        if data['api_key'] != TRACK_API_KEY:
             self.write(json.dumps({'status': 'failure'}))
             self.finish()
             return
