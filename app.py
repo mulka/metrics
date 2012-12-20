@@ -182,6 +182,13 @@ class GetTestsHandler(tornado.web.RequestHandler):
         self.write(json.dumps({'status': 'success', 'data': response[0]['tests']}))
         self.finish()
 
+def validate_event(event):
+    assert isinstance(event["event"], unicode)
+    assert isinstance(event["properties"], dict)
+    for key, value in event["properties"].iteritems():
+        assert isinstance(key, unicode)
+        assert isinstance(value, unicode)
+
 class StoreEventHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     def post(self):
@@ -197,6 +204,8 @@ class StoreEventHandler(tornado.web.RequestHandler):
             "event": data['event'],
             "properties": data['properties']
         }
+
+        validate_event(event)
 
         db.events.insert(event, callback=self._on_response)
 
