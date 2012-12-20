@@ -187,18 +187,16 @@ class StoreEventHandler(tornado.web.RequestHandler):
     def post(self):
         data = json.loads(self.request.body)
 
-        if data['api_secret'] != API_SECRET:
+        if data['api_key'] != API_SECRET:
             self.write(json.dumps({'status': 'failure'}))
             self.finish()
             return
 
         event = {
             "timestamp": time.time(),
-            "session_id": data['session_id'],
-            "url": data['url']
+            "event": data['event'],
+            "properties": data['properties']
         }
-        if 'user_id' in data:
-            event["user_id"] = data['user_id']
 
         db.events.insert(event, callback=self._on_response)
 
