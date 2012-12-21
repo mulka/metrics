@@ -18,20 +18,14 @@ if "config" not in db.collection_names():
     exit()
 
 FUNNELS = db.config.find_one('funnels')['funnels']
-TESTS = db.config.find_one('tests')['tests']
-
-if FUNNELS is None or TESTS is None:
-    print 'Error: Could not find funnels and/or tests in the config database collection'
-    exit()
 
 funnels_code = "var funnels = " + json.dumps(FUNNELS) + ";";
-tests_code = "var tests = " + json.dumps(TESTS) + ";";
 
 def map_code(code):
-    return "function () {" + funnels_code + tests_code + code + "}"
+    return "function () {" + funnels_code + code + "}"
 
 def reduce_code(code):
-    return "function (key, values) {" + funnels_code + tests_code + code + "}"
+    return "function (key, values) {" + funnels_code + code + "}"
 
 map1 = map_code("""
     var combined_steps = {};
