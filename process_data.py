@@ -17,7 +17,12 @@ if "config" not in db.collection_names():
     print 'Error: config database collection could not be found'
     exit()
 
-FUNNELS = db.config.find_one('funnels')['funnels']
+funnels_config = db.config.find_one('funnels')
+if funnels_config is None:
+    print 'Funnels config not found'
+    exit()
+
+FUNNELS = funnels_config['funnels']
 
 funnels_code = "var funnels = " + json.dumps(FUNNELS) + ";";
 
