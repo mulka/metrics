@@ -152,9 +152,9 @@ class GetTestsHandler(tornado.web.RequestHandler):
             self.finish()
             return
 
-        self.session_id = data['session_id']
+        self.distinct_id = data['distinct_id']
 
-        self.session_tests = {}
+        self.user_tests = {}
         for test in tests:
             ids = []
             for v in test['variations']:
@@ -165,15 +165,15 @@ class GetTestsHandler(tornado.web.RequestHandler):
 
                 for i in xrange(weight):
                     ids.append(v['id'])
-            self.session_tests[test['id']] = random.choice(ids)
+            self.user_tests[test['id']] = random.choice(ids)
 
-        db.sessions.insert({'_id': self.session_id, 'tests': self.session_tests}, safe=True, callback=self._on_insert_response)
+        db.users.insert({'_id': self.distinct_id, 'tests': self.user_tests}, safe=True, callback=self._on_insert_response)
 
     def _on_insert_response(self, response, error):
         if error:
-            db.sessions.find({'_id': self.session_id}, limit=1, callback=self._on_find_response)
+            db.users.find({'_id': self.distinct_id}, limit=1, callback=self._on_find_response)
         else:
-            self.write(json.dumps({'status': 'success', 'data': self.session_tests}))
+            self.write(json.dumps({'status': 'success', 'data': self.user_tests}))
             self.finish()
 
     def _on_find_response(self, response, error):

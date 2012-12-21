@@ -42,8 +42,8 @@ map1 = map_code("""
     });
 
     for(step in combined_steps){
-        if (this.url == step){
-            emit(this.session_id, {"events": [{"url": this.url, "timestamp": this.timestamp}]});
+        if (this.event == step){
+            emit(this.properties.distinct_id, {"events": [{"event": this.event, "timestamp": this.timestamp}]});
             return;
         }
     }
@@ -100,10 +100,10 @@ map3 = map_code("""
         });
 
         events.forEach(function(event){
-            var url = event.url;
+            var event_name = event.event;
             for(i in steps){
                 var step = steps[i];
-                if((i == 0 || item_data[steps[i-1]]) && url == step){
+                if((i == 0 || item_data[steps[i-1]]) && event_name == step){
                     item_data[step] = true;
                 }
             }
@@ -152,8 +152,8 @@ if "events" not in db.collection_names():
     print "no data yet"
     exit()
 
-db.events.map_reduce(map1, reduce1, "events_by_session")
-db.sessions.map_reduce(map2, reduce2, {"reduce": "events_by_session"})
-result = db.events_by_session.map_reduce(map3, reduce3, "funnel_data")
+db.events.map_reduce(map1, reduce1, "events_by_user")
+db.users.map_reduce(map2, reduce2, {"reduce": "events_by_user"})
+result = db.events_by_user.map_reduce(map3, reduce3, "funnel_data")
 for doc in result.find():
     print doc
