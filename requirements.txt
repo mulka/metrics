@@ -1,5 +1,5 @@
-asyncmongo==1.2.1
+asyncmongo==1.2.2
 distribute==0.6.24
-pymongo==2.3
-tornado==2.4
+pymongo==2.4.1
+tornado==2.4.1
 wsgiref==0.1.2
