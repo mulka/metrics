@@ -41,16 +41,16 @@ class APILoginHandler(tornado.web.RequestHandler):
         if data['password'] == PASSWORD:
             session_id = str(uuid.uuid4())
             session_ids.add(session_id)
-            self.write(json.dumps({'status': 'success', 'data': {'session_id': session_id}}))
+            self.write({'status': 'success', 'data': {'session_id': session_id}})
         else:
-            self.write(json.dumps({'status': 'failure'}))
+            self.write({'status': 'failure'})
 
 class APIFunnelDataHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     def post(self):
         data = json.loads(self.request.body)
         if data['session_id'] not in session_ids:
-            self.write(json.dumps({'status': 'failure'}))
+            self.write({'status': 'failure'})
             self.finish()
             return
 
@@ -58,7 +58,7 @@ class APIFunnelDataHandler(tornado.web.RequestHandler):
 
     def _on_config_response(self, response, error):
         if error:
-            self.write(json.dumps({'status': 'failure'}))
+            self.write({'status': 'failure'})
             self.finish()
             return
 
@@ -75,7 +75,7 @@ class APIFunnelDataHandler(tornado.web.RequestHandler):
 
     def _on_funnel_data_response(self, response, error):
         if error:
-            self.write(json.dumps({'status': 'failure'}))
+            self.write({'status': 'failure'})
             self.finish()
             return
 
@@ -111,7 +111,7 @@ class APIFunnelDataHandler(tornado.web.RequestHandler):
 
             data.append({"name": funnel["name"], "step_names": funnel["steps"], "data": rows})
 
-        self.write(json.dumps({'status': 'success', 'data': data}))
+        self.write({'status': 'success', 'data': data})
         self.finish()
 
 # class MainHandler(tornado.web.RequestHandler):
@@ -135,7 +135,7 @@ class GetTestsHandler(tornado.web.RequestHandler):
 
     def _on_config_response(self, response, error):
         if error:
-            self.write(json.dumps({'status': 'failure'}))
+            self.write({'status': 'failure'})
             self.finish()
             return
 
@@ -147,7 +147,7 @@ class GetTestsHandler(tornado.web.RequestHandler):
         data = json.loads(self.request.body)
 
         if data['api_secret'] != API_SECRET:
-            self.write(json.dumps({'status': 'failure'}))
+            self.write({'status': 'failure'})
             self.finish()
             return
 
@@ -172,14 +172,14 @@ class GetTestsHandler(tornado.web.RequestHandler):
         if error:
             db.sessions.find({'_id': self.session_id}, limit=1, callback=self._on_find_response)
         else:
-            self.write(json.dumps({'status': 'success', 'data': self.session_tests}))
+            self.write({'status': 'success', 'data': self.session_tests})
             self.finish()
 
     def _on_find_response(self, response, error):
         if error:
             raise tornado.web.HTTPError(500)
 
-        self.write(json.dumps({'status': 'success', 'data': response[0]['tests']}))
+        self.write({'status': 'success', 'data': response[0]['tests']})
         self.finish()
 
 class StoreEventHandler(tornado.web.RequestHandler):
@@ -188,7 +188,7 @@ class StoreEventHandler(tornado.web.RequestHandler):
         data = json.loads(self.request.body)
 
         if data['api_secret'] != API_SECRET:
-            self.write(json.dumps({'status': 'failure'}))
+            self.write({'status': 'failure'})
             self.finish()
             return
 
@@ -205,7 +205,7 @@ class StoreEventHandler(tornado.web.RequestHandler):
     def _on_response(self, response, error):
         if error:
             raise tornado.web.HTTPError(500)
-        self.write(json.dumps({'status': 'success'}))
+        self.write({'status': 'success'})
         self.finish()
 
 
