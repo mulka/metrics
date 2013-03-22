@@ -16,6 +16,7 @@ from pymongo.uri_parser import parse_uri
 TRACK_API_KEY = os.environ['TRACK_API_KEY']
 TEST_API_SECRET = os.environ['TEST_API_SECRET']
 PASSWORD = os.environ['PASSWORD']
+DISTINCT_PROPERTY_NAME = os.environ.get('DISTINCT_PROPERTY_NAME', None)
 
 db_info = parse_uri(os.environ['MONGOLAB_URI'])
 
@@ -199,6 +200,9 @@ class StoreEventHandler(tornado.web.RequestHandler):
             self.write(json.dumps({'status': 'failure'}))
             self.finish()
             return
+
+        if DISTINCT_PROPERTY_NAME:
+            data['properties'][unicode('distinct_id')] = data['properties'][DISTINCT_PROPERTY_NAME]
 
         event = {
             "timestamp": time.time(),
