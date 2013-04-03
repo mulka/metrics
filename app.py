@@ -5,6 +5,7 @@ import uuid
 import random
 import base64
 import urllib2
+import datetime
 from collections import defaultdict
 
 import asyncmongo
@@ -204,15 +205,17 @@ class StoreEventHandler(tornado.web.RequestHandler):
         if DISTINCT_PROPERTY_NAME:
             data['properties'][unicode('distinct_id')] = data['properties'][DISTINCT_PROPERTY_NAME]
 
+        timestamp = time.time()
         event = {
-            "timestamp": time.time(),
+            "timestamp": timestamp,
             "event": data['event'],
             "properties": data['properties']
         }
 
         validate_event(event)
 
-        db.events.insert(event, callback=self._on_response)
+        day_str = datetime.datetime.fromtimestamp(timestamp).strftime('%Y_%m_%d')
+        db['events_' + day_str].insert(event, callback=self._on_response)
 
     def _on_response(self, response, error):
         if error:
